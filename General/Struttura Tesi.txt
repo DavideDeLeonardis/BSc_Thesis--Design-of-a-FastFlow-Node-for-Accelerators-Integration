@@ -2,42 +2,90 @@ TITOLO:
    Progettazione di un nodo FastFlow per integrazione di acceleratori
 
 Capitolo 1: Introduzione
-   Contesto: Parta dal quadro generale. La fine della Legge di Moore (il numero di transistor nei circuiti raddoppia all'incirca ogni 18 mesi), la crescente necessità di performance e l'ascesa del calcolo eterogeneo (CPU, GPU, FPGA).
-   Il Problema: Introdurre gli FPGA come soluzione potente ma complessa da programmare e integrare in applicazioni esistenti. Introdurre FastFlow come framework di alto livello per il parallelismo che semplifica la vita dello sviluppatore.
-   Obiettivo della Tesi: Dichiarare chiaramente lo scopo del suo lavoro, collegandosi alla traccia. Es: "L'obiettivo di questa tesi è progettare, implementare e valutare un prototipo software che integri in modo efficiente kernel per FPGA, descritti in OpenCL, all'interno del framework di programmazione parallela FastFlow."
-   Struttura del Documento: Concluda il capitolo con una breve descrizione di cosa tratterà ogni capitolo successivo ("Nel Capitolo 2 verranno introdotte le tecnologie...", etc.).
+1.1 Contesto: L'Era del Calcolo Eterogeneo
+Il rallentamento della Legge di Moore e la necessità di performance.
+L'ascesa del calcolo eterogeneo (CPU, GPU, FPGA) come soluzione.
+1.2 Il Problema: Complessità di Integrazione
+La potenza degli acceleratori (GPU per il parallelismo di massa, FPGA per la specializzazione) vs. la difficoltà di programmarli e integrarli in applicazioni C++ esistenti.
+1.3 La Soluzione Proposta: FastFlow come Orchestratore
+Introduzione a FastFlow come framework di alto livello per il parallelismo C++.
+Spiegare come FastFlow possa "nascondere" la complessità dell'offloading hardware.
+1.4 Obiettivi e Contributi della Tesi
+Obiettivo: Progettare, implementare e valutare un prototipo software per l'integrazione efficiente di kernel per acceleratori hardware (FPGA, GPU OpenCL, GPU Metal) all'interno di una pipeline FastFlow.
+Contributi: Il design di un'architettura software disaccoppiata; l'analisi comparativa delle performance (Latenza, Throughput, Overhead) tra diverse API e carichi di lavoro (memory-bound vs. compute-bound).
+1.5 Struttura della Tesi
+Breve panoramica dei capitoli successivi.
 
-Capitolo 2: Contesto e Tecnologie
-   FPGA e Calcolo Accelerato: Cosa sono gli FPGA? Come si differenziano da CPU e GPU? Introdurre il concetto di High-Level Synthesis (HLS) e il ruolo di Vitis.
-   Standard OpenCL: Cos'è OpenCL? Perché è lo standard per la programmazione eterogenea? Spiegare brevemente i concetti chiave che ha usato: contesto, coda di comandi, kernel, buffer, eventi.
-   Il Framework FastFlow: Cos'è FastFlow? Quali sono i suoi pattern di parallelismo principali? Spiegare i concetti di ff_node, ff_Pipe e, soprattutto, ff::ParallelFor, dato che li ha usati entrambi.
+Capitolo 2: Fondamenti e Tecnologie Abilitanti
+2.1 Architetture a Confronto: CPU, GPU, FPGA
+Architettura CPU (Multi-core, cache, shared memory).
+Architettura GPU (SIMT, migliaia di core, parallelismo dei dati).
+Architettura FPGA (Logica riconfigurabile, parallelismo a pipeline, Sintesi ad Alto Livello (HLS) e ruolo di Vitis).
+2.2 Framework di Parallelismo Software su CPU
+FastFlow: Spiegare i pattern ff_Pipe (pipeline) e ff::ParallelFor (parallelismo dati).
+OpenMP: Spiegare il modello a direttive (#pragma omp parallel for) come standard industriale.
+2.3 API per l'Offloading Hardware
+OpenCL: Spiegare il suo ruolo di standard multipiattaforma (Contesto, Coda, Kernel .cl, Eventi).
+Apple Metal: Spiegare il suo ruolo di API nativa ad alte prestazioni per macOS (Device, Coda, Kernel .metal, Memoria Unificata).
 
-Capitolo 3: Progetto e Implementazione dell'Architettura
-   Questo è il cuore tecnico della sua tesi, dove descrive il "come" ha costruito il suo progetto.
-   Visione d'Insieme: Presenti l'architettura generale: il main che funge da dispatcher tra l'esecuzione su CPU e quella su acceleratore.
-   Il Percorso CPU: Spieghi la sua implementazione con executeCpuParallelTasks e la scelta di ff::ParallelFor come strumento ideale per il "parallelismo shared memory/thread".
-   Il Percorso Acceleratore: Questa è la parte più importane.
-   La Pipeline Principale: Descriva la ff_Pipe a 2 stadi con Emitter e ff_node_acc_t. Spieghi il ruolo di ciascun nodo.
-   L'Architettura di ff_node_acc_t: Argomenti la scelta di design chiave: l'incapsulamento di una pipeline interna manuale. Spieghi perché ha scelto questo pattern (gestione dello stato) e perché è efficiente (pipeline a 2 stadi producer/consumer con BlockingQueue per evitare l'attesa attiva).
-   L'Astrazione IAccelerator: Spieghi il ruolo dell'interfaccia IAccelerator e delle sue implementazioni (GpuAccelerator, FpgaAccelerator). Argomenti l'importanza di questa astrazione.
-   La Composizione con BufferManager: Descriva perché ha estratto la logica di gestione dei buffer in una classe separata (BufferManager) e come le classi acceleratore la utilizzano (pattern di Composizione).
+Capitolo 3: Progettazione dell'Architettura Software
+(Il "come" e il "perché" del suo design)
+3.1 Visione d'Insieme: Un Dispatcher Flessibile
+Descrivere l'architettura del main come "dispatcher" che seleziona il percorso di esecuzione (CPU vs. Acceleratore) in base agli input.
+3.2 L'Interfaccia IAccelerator: Il Contratto di Astrazione
+Spiegare l'importanza di un'interfaccia pura per disaccoppiare la logica della pipeline dall'hardware specifico.
+3.3 Architettura 1: Esecuzione Parallela su CPU
+Spiegare il design dei "Runner" (executeCpuFFTasks, executeCpuOMPTasks) e perché sono sequenziali a livello di task ma paralleli a livello di dati.
+3.4 Architettura 2: La Pipeline di Offloading (ff_node_acc_t)
+Il Problema del Design: Come gestire l'offloading asincrono e "stateful" (con stato) all'interno di un nodo FastFlow?
+La Soluzione (Il Cuore della Tesi): L'incapsulamento di una pipeline manuale a 2 stadi (producer/consumer).
+Giustificazione: Spiegare perché questa architettura è superiore a una ff_Pipe "piatta" (gestione centralizzata dello stato, del BufferManager e della sincronizzazione).
+Sincronizzazione Efficiente: Spiegare la scelta della BlockingQueue per eliminare l'attesa attiva (yield) e consumare 0% di CPU.
+3.5 Pattern di Composizione: Il BufferManager
+Spiegare perché la logica del pool di buffer è stata estratta in una classe separata (Composizione) invece di usare una classe base complessa (Ereditarietà), per eliminare la duplicazione di codice tra Gpu e FpgaAccelerator.
 
-Capitolo 4: Configurazione Sperimentale e Analisi dei Risultati
-   Questo capitolo presenta i dati e, soprattutto, la loro interpretazione.
-   Ambiente di Test (Setup Sperimentale): Descriva in dettaglio l'hardware (modello di Mac, CPU della VM, scheda Alveo U50) e il software (versioni di OS, Vitis, GCC/Clang, FastFlow) utilizzati.
-   Metodologia di Benchmark: Spieghi come ha condotto i test: il kernel vecAdd, i valori di N scelti, il numero di task (NUM_TASKS=100) e le metriche misurate (elapsed e computed). Spieghi il significato di queste metriche e dell'overhead.
-   Presentazione dei Risultati: Includa tabelle chiare con i dati raccolti (simili a quelle che abbiamo creato). Soprattutto, crei dei grafici per visualizzare i risultati, ad esempio:
-   Grafico 1: Latenza (Avg Elapsed) in funzione di N per CPU, GPU, FPGA.
-   Grafico 2: Throughput (Task al secondo) in funzione di N.
-   Grafico 3 (opzionale): Analisi dell'Overhead in percentuale sul tempo totale.
-   Analisi e Discussione: Questa è la parte più importante. Commenti i risultati:
-   Confronti le performance delle tre piattaforme. Chi vince e perché?
-   Discuta l'impatto della dimensione del problema N. Perché la CPU è più veloce per N piccoli? Dove si trova il "punto di pareggio" (break-even point)?
-   Analizzi l'overhead: è il collo di bottiglia principale? Colleghi uesti dati a ciò che ha visto (o avrebbe visto) in Vitis Analyzer, discutendo il ruolo del trasferimento dati.
-   Menzioni l'errore di allocazione della memoria sull'FPGA per N grandi e ne spieghi la causa (limiti di risorse).
+Capitolo 4: Dettagli Implementativi
+(Il "codice" che realizza il design)
+4.1 Implementazione dei Kernel di Test
+Descrivere i tre kernel (vecAdd, polynomial_op, heavy_compute_kernel) e il loro scopo (testare scenari memory-bound vs. compute-bound).
+4.2 Implementazione degli Acceleratori Concreti
+Gpu_OpenCL_Accelerator: Compilazione da sorgente (clCreateProgramWithSource).
+FpgaAccelerator: Caricamento di binari (clCreateProgramWithBinary).
+Gpu_Metal_Accelerator: L'uso di Objective-C++ (.mm), la gestione della memoria unificata (memcpy), la compilazione da sorgente (newLibraryWithSource) e i "bridging cast" per nascondere i tipi (void*).
+4.3 Implementazione della Portabilità (CMake)
+Spiegare come CMakeLists.txt usa le direttive condizionali (if(APPLE)) per compilare e linkare file diversi (es. FpgaAccelerator.cpp solo su Linux, Gpu_Metal_Accelerator.mm solo su macOS).
 
-Capitolo 5: Conclusioni e Sviluppi Futuri
-   Sintesi del Lavoro: Riassuma brevemente il problema, la soluzione che ha implementato e i risultati più importanti che ha ottenuto.
-   Contributi: Elenchi i suoi contributi principali (es: "è stato realizzato un prototipo funzionante...", "è stata condotta un'analisi comparativa...", "è stata proposta un'architettura software robusta...").
-   Limitazioni del Lavoro: Sia onesto sui limiti del suo prototipo (es. "testato con un solo kernel", "la gestione degli errori potrebbe essere migliorata", "l'architettura del BufferManager presume un pattern di I/O a 2-input/1-output"). Questo dimostra maturità scientifica.
-   Sviluppi Futuri: Proponga delle idee su come il suo lavoro potrebbe essere esteso. Ad esempio: rendere la classe IAccelerator più generica con i template, testare con kernel più complessi, integrare il prototipo in un'applicazione reale, ecc.
+Capitolo 5: Analisi Sperimentale e Risultati
+(Il capitolo più importante: i dati)
+5.1 Setup Sperimentale (Hardware e Software)
+Descrivere in dettaglio le macchine (Mac M2 Pro, VM Linux, Alveo U50) e le versioni dei software (Vitis, FastFlow, Clang, GCC).
+5.2 Metodologia di Benchmark e Metriche
+Spiegare i test (N=10k, 1M, 7.4M; NUM_TASKS=100).
+Definizione delle Metriche: Spiegare la legenda (Avg In-Node Time, Avg Service Time, Throughput, Compute, Overhead).
+5.3 Presentazione dei Risultati
+Includere le tabelle complete dei dati.
+Grafici Chiave: Throughput vs. N; Latenza vs. Periodo; Breakdown del tempo (Compute vs. Overhead) per i diversi kernel.
+5.4 Discussione e Analisi dei Risultati
+Validazione della Pipeline: Usare i dati (Latenza >> Periodo) per dimostrare che la sovrapposizione funziona.
+Analisi del Collo di Bottiglia: Dimostrare come il sistema sia limitato dall'overhead (memory/call-bound) con i kernel leggeri, e come diventi limitato dal calcolo (compute-bound) con heavy_compute_kernel.
+L'Overhead di Accodamento: Spiegare che l'alto Avg Overhead Time nei casi compute-bound è un sintomo di successo (tempo di attesa in coda) che prova la saturazione del collo di bottiglia.
+Confronti Piattaforma:
+CPU: FastFlow vs. OpenMP (perché OpenMP è risultato più veloce?).
+GPU: OpenCL vs. Metal (quantificare il costo dell'astrazione vs. l'API nativa).
+FPGA: Analisi delle performance HLS (perché è più lento? Overhead VM/PCIe, design non ottimizzato per la forza bruta).
+
+Capitolo 6: Conclusioni e Sviluppi Futuri
+6.1 Sintesi del Lavoro e Raggiungimento degli Obiettivi
+6.2 Limitazioni e Problemi Riscontrati
+(es. incompatibilità di versione Vitis, limiti di memoria FPGA su VM, gestione errori con exit(), design specializzato per kernel 2-in/1-out).
+6.3 Sviluppi Futuri
+(es. generalizzare l'architettura con i template, testare su Linux "bare metal" per ridurre l'overhead dell'FPGA, testare kernel con pipeline HLS più complesse).
+6.4 Considerazioni Personali
+(Cosa ha imparato dal progetto, corsi universitari più utili, difficoltà e soddisfazioni).
+
+Bibliografia
+   lista bullet points
+
+Codice
+
+Ringraziamenti
