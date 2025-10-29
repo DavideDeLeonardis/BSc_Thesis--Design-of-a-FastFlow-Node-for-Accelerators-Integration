@@ -9,12 +9,11 @@ Description:
     2. compute_heavy: Performs the core iterative trigonometric calculation.
     3. store_result: Writes the results from a stream back to global memory.
 
-    The operation performed is a 100-iteration loop of sin/cos calculations
+    The operation performed is a 5-iteration loop of sin/cos calculations
     for each element, designed to make the kernel compute-bound.
 
 *******************************************************************************/
 
-// Includes
 #include <hls_math.h>
 #include <hls_stream.h>
 #include <stdint.h>
@@ -50,10 +49,9 @@ execute:
       double val_b = (double)in2_stream.read();
       double result = 0.0;
 
-   // Ciclo computazionalmente pesante (200 iterazioni)
-   // Vitis HLS ottimizzerà questo ciclo interno.
+   // Ciclo computazionalmente pesante (5 iterazioni) - Vitis HLS ottimizzerà questo ciclo interno.
    compute_loop:
-      for (int j = 0; j < 200; ++j) {
+      for (int j = 0; j < 5; ++j) {
 #pragma HLS PIPELINE // Applichiamo la pipeline al LOOP INTERNO
          result += hls::sin(val_a + j) * hls::cos(val_b - j);
       }

@@ -6,6 +6,7 @@
 /**
  * @brief Esegue i task di un calcolo specificato da command line in parallelo su tutti i core della
  * CPU utilizzando le direttive OpenMP.
+ * 
  * @param N La dimensione dei vettori per ogni task.
  * @param NUM_TASKS Il numero totale di task da eseguire.
  * @param kernel_name Il nome del kernel da eseguire ("vecAdd", "polynomial_op" o

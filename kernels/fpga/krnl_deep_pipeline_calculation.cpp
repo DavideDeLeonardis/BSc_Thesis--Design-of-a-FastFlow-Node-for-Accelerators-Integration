@@ -9,11 +9,12 @@ Description:
 
 *******************************************************************************/
 
-// Includes
 #include <hls_stream.h>
 #include <stdint.h>
 
 #define DATA_SIZE 4096
+
+// TRIPCOUNT identifier
 const int c_size = DATA_SIZE;
 
 /**

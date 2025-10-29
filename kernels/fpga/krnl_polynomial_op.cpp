@@ -20,7 +20,6 @@ Description:
 
 *******************************************************************************/
 
-// Includes
 #include <hls_stream.h>
 #include <stdint.h>
 

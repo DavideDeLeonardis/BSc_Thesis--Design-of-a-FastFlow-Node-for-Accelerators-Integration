@@ -70,7 +70,7 @@ long long executeCpu_FF_Tasks(size_t N, size_t NUM_TASKS, const std::string &ker
             double val_b = (double)b[i];
             double result = 0.0;
 
-            for (int j = 0; j < 200; ++j)
+            for (int j = 0; j < 5; ++j)
                result += std::sin(val_a + j) * std::cos(val_b - j);
 
             c[i] = (int)result;
