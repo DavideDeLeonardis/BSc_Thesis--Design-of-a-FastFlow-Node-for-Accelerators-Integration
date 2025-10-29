@@ -13,6 +13,29 @@ find_package(OpenCL REQUIRED)
 
 add_compile_definitions(FF_HEADER_ONLY NO_DEFAULT_MAPPING)
 
+# ========== Clonazione di FastFlow da GitHub =======
+set(FASTFLOW_DIR "${CMAKE_SOURCE_DIR}/external/fastflow")
+
+if(NOT EXISTS ${FASTFLOW_DIR})
+    message(STATUS "FastFlow not found. Cloning from GitHub...")
+    file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/external")
+    execute_process(
+        COMMAND git clone --depth 1 https://github.com/fastflow/fastflow.git ${FASTFLOW_DIR}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external
+        RESULT_VARIABLE GIT_RESULT
+        OUTPUT_VARIABLE GIT_OUTPUT
+        ERROR_VARIABLE GIT_ERROR
+    )
+    if(NOT GIT_RESULT EQUAL 0)
+        message(FATAL_ERROR "Errore during the clonation of FastFlow: ${GIT_ERROR}")
+    else()
+        message(STATUS "FastFlow cloned successfully in ${FASTFLOW_DIR}")
+    endif()
+else()
+    message(STATUS "FastFlow present in ${FASTFLOW_DIR}")
+endif()
+# ===================================================
+
 # Lista dei file sorgente comuni a tutte le piattaforme.
 set(COMMON_SOURCES
     src/main.cpp
@@ -57,7 +80,6 @@ target_link_libraries(tesi-exec PRIVATE
 if(NOT APPLE)
     find_package(OpenMP)
     if(OpenMP_FOUND)
-        message(STATUS "OpenMP found, enabling parallel OMP execution.")
         target_link_libraries(tesi-exec PRIVATE OpenMP::OpenMP_CXX)
     endif()
     target_link_libraries(tesi-exec PRIVATE "-static-libstdc++")
