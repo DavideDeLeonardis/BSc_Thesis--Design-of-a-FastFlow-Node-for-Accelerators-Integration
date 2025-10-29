@@ -32,7 +32,7 @@ if(NOT EXISTS ${FASTFLOW_DIR})
         message(STATUS "FastFlow cloned successfully in ${FASTFLOW_DIR}")
     endif()
 else()
-    message(STATUS "FastFlow present in ${FASTFLOW_DIR}")
+    message(STATUS "Found FastFlow: ${FASTFLOW_DIR}")
 endif()
 # ===================================================
 
