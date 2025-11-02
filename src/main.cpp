@@ -22,8 +22,7 @@
  * @brief Orchestra l'intera pipeline FastFlow per l'offloading su un
  * acceleratore. Crea i due nodi della pipeline FF (Emitter, ff_node_acc_t).
  * Riceve l'acceleratore già inizializzato. Avvia la pipeline. Misura e
- * raccoglie i tempi di esecuzione (computed ed elapsed) e il numero di task
- * completati.
+ * raccoglie i tempi di esecuzione e il numero di task completati.
  */
 void runAcceleratorPipeline(size_t N, size_t NUM_TASKS, IAccelerator *accelerator,
                             long long &elapsed_ns, long long &computed_ns,
