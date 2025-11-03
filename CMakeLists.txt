@@ -40,7 +40,7 @@ endif()
 set(COMMON_SOURCES
     src/main.cpp
     src/ff_Pipe_nodes/ff_node_acc_t.cpp
-    src/factory/RunnerStrategyFactory.cpp
+    src/factory/RunnerStrategy_Factory.cpp
     src/strategy_cpu/CpuFfStrategy.cpp
     src/strategy_accelerator/AcceleratorPipelineStrategy.cpp
     src/accelerator/BufferManager.cpp
