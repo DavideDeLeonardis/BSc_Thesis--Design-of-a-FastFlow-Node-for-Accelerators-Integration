@@ -4,8 +4,8 @@
 #include <future>
 
 /**
- * @brief Struttura usata per raccogliere risultati generati dai thread interni al nodo FF e
- * passarli al thread principale.
+ * @brief Struttura usata per raccogliere risultati generati dai 2 thread interni del nodo
+ * accelerato FF e passarli al thread principale in AcceleratorPipelineStrategy.
  */
 struct StatsCollector {
    std::atomic<size_t> tasks_processed{0};
