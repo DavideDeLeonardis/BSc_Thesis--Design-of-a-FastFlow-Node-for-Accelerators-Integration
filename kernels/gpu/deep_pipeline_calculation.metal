@@ -4,9 +4,7 @@ using namespace metal;
 /**
  * @brief Esegue un'operazione a pipeline profonda a 4 stadi su due vettori.
  *
- * Questa è la versione in Metal Shading Language (MSL) del kernel.
- * Ogni thread della GPU esegue l'intera sequenza di 4 operazioni per un
- * singolo elemento, sfruttando il parallelismo dei dati.
+ * Ogni work-item della GPU esegue l'intera sequenza di calcoli per un singolo elemento.
  *
  * @param a         Puntatore al primo vettore di input [attributo buffer(0)].
  * @param b         Puntatore al secondo vettore di input [attributo buffer(1)].

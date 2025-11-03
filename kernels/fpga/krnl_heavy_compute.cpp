@@ -49,10 +49,10 @@ execute:
       double val_b = (double)in2_stream.read();
       double result = 0.0;
 
-   // Ciclo computazionalmente pesante (5 iterazioni) - Vitis HLS ottimizzerà questo ciclo interno.
+   // Compute-intensive loop (5 iterations) - Vitis HLS will optimize this inner loop.
    compute_loop:
       for (int j = 0; j < 5; ++j) {
-#pragma HLS PIPELINE // Applichiamo la pipeline al LOOP INTERNO
+#pragma HLS PIPELINE // Enable pipelining for the inner loop
          result += hls::sin(val_a + j) * hls::cos(val_b - j);
       }
 
@@ -92,7 +92,7 @@ void krnl_heavy_compute(int32_t *in1, int32_t *in2, int32_t *out, int size) {
    static hls::stream<int32_t> out_stream("output_stream");
 
 #pragma HLS dataflow
-   // dataflow pragma instruct compiler to run following three APIs in parallel
+   // dataflow pragma instruct compiler to run following three APIs in parallel.
    load_input(in1, in1_stream, size);
    load_input(in2, in2_stream, size);
    compute_heavy(in1_stream, in2_stream, out_stream, size);

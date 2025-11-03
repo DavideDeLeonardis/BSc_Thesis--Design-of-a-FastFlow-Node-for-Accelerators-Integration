@@ -4,8 +4,6 @@ using namespace metal;
 /**
  * @brief Esegue la somma elemento per elemento di due vettori.
  *
- * Questa è la versione in Metal Shading Language (MSL) del kernel.
- *
  * @param a         Puntatore al primo vettore di input [attributo buffer(0)].
  * @param b         Puntatore al secondo vettore di input [attributo buffer(1)].
  * @param c         Puntatore al vettore di output [attributo buffer(2)].
@@ -18,8 +16,7 @@ kernel void vecAdd(device const int* a [[buffer(0)]],
                    constant uint& n    [[buffer(3)]],
                    uint gid            [[thread_position_in_grid]])
 {
-    // Esegue un controllo per assicurarsi che il thread non acceda a memoria
-    // fuori dai limiti del vettore.
+    // Esegue un controllo per assicurarsi che il thread non acceda a memoria fuori dai limiti del vettore.
     if (gid >= n) {
         return;
     }

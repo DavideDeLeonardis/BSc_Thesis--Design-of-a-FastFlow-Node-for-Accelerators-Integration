@@ -2,7 +2,7 @@
 using namespace metal;
 
 /**
- * @brief Esegue un calcolo computazionalmente intensivo (versione MSL).
+ * @brief Esegue un calcolo computazionalmente intensivo (compute-bound).
  *
  * Per ogni elemento, esegue un ciclo di 5 iterazioni di calcoli
  * trigonometrici (sin, cos) per stressare le unità di calcolo.

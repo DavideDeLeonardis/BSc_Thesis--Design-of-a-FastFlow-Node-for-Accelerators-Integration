@@ -17,12 +17,6 @@ Description:
 // TRIPCOUNT identifier
 const int c_size = DATA_SIZE;
 
-/**
- * @brief Struct per trasportare i dati attraverso la pipeline.
- *
- * Contiene il risultato intermedio del calcolo e i valori originali
- * di 'a' e 'b' che sono necessari negli stadi successivi.
- */
 struct PipelineData {
    int64_t result;
    int32_t val_a;
@@ -104,7 +98,7 @@ void krnl_deep_pipeline_calculation(int32_t *in1, int32_t *in2, int32_t *out, in
 #pragma HLS INTERFACE m_axi port = in2 bundle = gmem1
 #pragma HLS INTERFACE m_axi port = out bundle = gmem0
 
-   // Streams to connect the pipeline stages
+   // Streams to connect the pipeline stages.
    static hls::stream<PipelineData> stream_load_to_s1("stream_load_to_s1");
    static hls::stream<PipelineData> stream_s1_to_s2("stream_s1_to_s2");
    static hls::stream<PipelineData> stream_s2_to_s3("stream_s2_to_s3");
@@ -112,7 +106,7 @@ void krnl_deep_pipeline_calculation(int32_t *in1, int32_t *in2, int32_t *out, in
    static hls::stream<int32_t> stream_s4_to_store("stream_s4_to_store");
 
 #pragma HLS dataflow
-   // La regione dataflow crea una pipeline hardware lineare dalle seguenti chiamate
+   // Dataflow region creates a linear hardware pipeline from the following calls.
    load_inputs(in1, in2, stream_load_to_s1);
    stage1(stream_load_to_s1, stream_s1_to_s2);
    stage2(stream_s1_to_s2, stream_s2_to_s3);

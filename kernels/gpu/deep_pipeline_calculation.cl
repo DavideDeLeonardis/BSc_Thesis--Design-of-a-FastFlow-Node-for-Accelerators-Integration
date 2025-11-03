@@ -1,10 +1,7 @@
 /**
  * @brief Esegue un'operazione a pipeline profonda a 4 stadi su due vettori.
  *
- * Per ogni elemento i, questo kernel esegue una sequenza di 4 operazioni
- * matematiche. A differenza della versione FPGA, qui non c'è una pipeline
- * hardware; ogni work-item della GPU esegue l'intera sequenza di calcoli
- * per un singolo elemento.
+ * Ogni work-item della GPU esegue l'intera sequenza di calcoli per un singolo elemento.
  *
  * @param a Puntatore al primo vettore di input in memoria globale.
  * @param b Puntatore al secondo vettore di input in memoria globale.
