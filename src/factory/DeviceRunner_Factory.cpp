@@ -26,13 +26,13 @@ std::unique_ptr<IDeviceRunner> create_runner_for_device(const std::string &devic
 #ifdef __APPLE__
 
    else if (device_type == "gpu_opencl") {
-      auto acc = std::make_unique<Gpu_OpenCL_Accelerator>(kernel_path, kernel_name);
-      return std::make_unique<AcceleratorPipelineRunner>(std::move(acc));
+      auto accelerator = std::make_unique<Gpu_OpenCL_Accelerator>(kernel_path, kernel_name);
+      return std::make_unique<AcceleratorPipelineRunner>(std::move(accelerator));
    }
 
    else if (device_type == "gpu_metal") {
-      auto acc = std::make_unique<Gpu_Metal_Accelerator>(kernel_path, kernel_name);
-      return std::make_unique<AcceleratorPipelineRunner>(std::move(acc));
+      auto accelerator = std::make_unique<Gpu_Metal_Accelerator>(kernel_path, kernel_name);
+      return std::make_unique<AcceleratorPipelineRunner>(std::move(accelerator));
    }
 
 #else
@@ -42,8 +42,8 @@ std::unique_ptr<IDeviceRunner> create_runner_for_device(const std::string &devic
    }
 
    else if (device_type == "fpga") {
-      auto acc = std::make_unique<Fpga_Accelerator>(kernel_path, kernel_name);
-      return std::make_unique<AcceleratorPipelineRunner>(std::move(acc));
+      auto accelerator = std::make_unique<Fpga_Accelerator>(kernel_path, kernel_name);
+      return std::make_unique<AcceleratorPipelineRunner>(std::move(accelerator));
    }
 #endif
 
