@@ -35,7 +35,7 @@ Per GPU/FPGA: Manteniamo la nostra pipeline di offloading a 3 stadi.
 Per CPU: Usiamo un pattern "Farm" (ff_farm) con una squadra di CpuWorker che processano i task in vero parallelo.
 
 2. I Bug Tecnici più Difficili da Risolvere
-Questi non hanno cambiato l'architettura, ma sono stati difficili da trovare e hanno richiesto una profonda comprensione degli strumenti.
+
 A. Il Problema: Il Deadlock (Race Condition sulla Terminazione)
 Cos'era: Dopo aver implementato la pipeline a 3 stadi, il programma con la CPU eseguiva tutti i task ma non terminava mai. Si bloccava.
 Perché era Difficile: Questo era un bug di concorrenza (race condition). I nostri 3 thread interni aspettavano il segnale SENTINEL per terminare. Ma in alcuni casi, il runtime di FastFlow chiamava svc_end() (che faceva il join sui thread) prima che svc() avesse ricevuto FF_EOS per inviare il SENTINEL. I thread non avrebbero mai ricevuto il segnale, e il join non sarebbe mai terminato.
