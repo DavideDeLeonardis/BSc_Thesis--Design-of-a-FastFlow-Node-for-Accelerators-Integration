@@ -4,6 +4,7 @@
  */
 
 #include "DeviceRunner_Factory.hpp"
+#include "../common/device_constants.h"
 
 #include "../strategy_accelerator/AcceleratorPipelineRunner.hpp"
 #include "../strategy_cpu/Cpu_FF_Runner.hpp"
@@ -19,29 +20,29 @@
 std::unique_ptr<IDeviceRunner> create_runner_for_device(const std::string &device_type,
                                                         const std::string &kernel_path,
                                                         const std::string &kernel_name) {
-   if (device_type == "cpu_ff") {
+   if (device_type == device::CPU_FF) {
       return std::make_unique<Cpu_FF_Runner>(kernel_name);
    }
 
 #ifdef __APPLE__
 
-   else if (device_type == "gpu_opencl") {
+   else if (device_type == device::GPU_CL) {
       auto accelerator = std::make_unique<Gpu_OpenCL_Accelerator>(kernel_path, kernel_name);
       return std::make_unique<AcceleratorPipelineRunner>(std::move(accelerator));
    }
 
-   else if (device_type == "gpu_metal") {
+   else if (device_type == device::GPU_MTL) {
       auto accelerator = std::make_unique<Gpu_Metal_Accelerator>(kernel_path, kernel_name);
       return std::make_unique<AcceleratorPipelineRunner>(std::move(accelerator));
    }
 
 #else
 
-   else if (device_type == "cpu_omp") {
+   else if (device_type == device::CPU_OMP) {
       return std::make_unique<Cpu_OMP_Runner>(kernel_name);
    }
 
-   else if (device_type == "fpga") {
+   else if (device_type == device::FPGA) {
       auto accelerator = std::make_unique<Fpga_Accelerator>(kernel_path, kernel_name);
       return std::make_unique<AcceleratorPipelineRunner>(std::move(accelerator));
    }
