@@ -1,5 +1,4 @@
 cambio funzioni enqueueBuffer in attuali
-riuso buffer
 nome kernel uguale a nome kernel fiile
 
 1. Il "Deadlock Fantasma" (La Pipeline che Non Partiva)
