@@ -1,3 +1,10 @@
+Font: Cambria
+Codice: Courier New
+Capitoli: 16pt
+Sezioni: 14pt
+Sottosezione: 13pt
+Testo: 12pt
+
 TITOLO:
    Progettazione di un nodo FastFlow per integrazione di acceleratori
 

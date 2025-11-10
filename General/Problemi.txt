@@ -1,5 +1,6 @@
 cambio funzioni enqueueBuffer in attuali
-nome kernel uguale a nome kernel fiile
+nome kernel uguale a nome kernel file
+Migliora diagramma delle classi
 
 1. Il "Deadlock Fantasma" (La Pipeline che Non Partiva)
 Questo è stato in assoluto il problema più difficile e subdolo.
