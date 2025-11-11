@@ -5,7 +5,7 @@
 #include <memory>
 
 /**
- * @brief Strategia concreta che implementa IDeviceRunner (tramite pattern Adapter).
+ * @brief Strategia concreta che implementa IDeviceRunner (è anche un Adapter).
  *
  * Questa classe "adatta" la logica della pipeline FastFlow + Acceleratore per farla apparire
  * come una semplice strategia eseguibile dal main.
