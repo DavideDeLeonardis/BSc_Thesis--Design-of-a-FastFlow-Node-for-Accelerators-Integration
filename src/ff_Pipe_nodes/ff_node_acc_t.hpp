@@ -5,6 +5,7 @@
 #include "../common/StatsCollector.hpp"
 #include "../common/Task.hpp"
 #include "../strategy_accelerator/accelerator/IAccelerator.hpp"
+
 #include <atomic>
 #include <future>
 #include <iostream>
