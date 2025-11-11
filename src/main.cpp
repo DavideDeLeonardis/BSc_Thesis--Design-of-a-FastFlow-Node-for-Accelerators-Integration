@@ -24,34 +24,29 @@
 int main(int argc, char *argv[]) {
    // Parametri della command line di default.
    size_t N = 1000000, NUM_TASKS = 20;
-   std::string device_type = device::CPU_FF,  
-               kernel_path = "", kernel_name = "";
+   std::string device_type = device::CPU_FF, kernel_path = "", kernel_name = "";
 
-   // Parsing degli argomenti della command line (setta anche il kernel di default) e stampa
-   // della configurazione scelta.
    parse_args(argc, argv, N, NUM_TASKS, device_type, kernel_path, kernel_name);
    print_configuration(N, NUM_TASKS, device_type, kernel_path, kernel_name);
 
    ComputeResult results;
 
-   {
+   try {
       // Delega alla Factory la creazione della strategia di esecuzione corretta
-      // (Cpu_OMP_Runner, AcceleratorPipelineRunner, ecc.) in base al device_type.
+      // (tramite Cpu_OMP_Runner, AcceleratorPipelineRunner, ecc.) in base al device_type.
       std::unique_ptr<IDeviceRunner> strategy =
          create_runner_for_device(device_type, kernel_path, kernel_name);
 
-      if (!strategy) {
-         std::cerr << "[ERROR] Invalid device type '" << device_type << "' for this OS.\n";
-         print_usage(argv[0]);
-         return -1;
-      }
-
       // Esecuzione della computazione tramite la Strategy scelta (CPU/GPU/FPGA) che esegue la
-      // parallelizzazione dei task su CPU multicore o la pipeline con offloading su GPU/FPGA.
+      // parallelizzazione dei task su CPU multicore o tramite la pipeline con offloading su GPU/FPGA.
       results = strategy->execute(N, NUM_TASKS);
+
+   } catch (const std::invalid_argument &e) {
+      std::cerr << "[ERROR]: " << e.what() << "\n";
+      print_usage(argv[0]);
+      exit(EXIT_FAILURE);
    }
 
-   // Calcolo e stampa delle metriche di performance finali.
    PerformanceData metrics = calculate_metrics(results);
    print_metrics(N, NUM_TASKS, device_type, kernel_name, metrics, results.tasks_completed);
 

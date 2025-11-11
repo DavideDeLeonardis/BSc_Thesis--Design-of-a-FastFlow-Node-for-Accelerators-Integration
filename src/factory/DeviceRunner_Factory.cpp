@@ -48,5 +48,5 @@ std::unique_ptr<IDeviceRunner> create_runner_for_device(const std::string &devic
    }
 #endif
 
-   return nullptr;
+   throw std::invalid_argument("Invalid device type '" + device_type + "' for this OS.");
 }
