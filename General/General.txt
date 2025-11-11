@@ -13,8 +13,8 @@ Parte di colloquio con l'acceleratore vedi VITIS XILINX:
 Per usarla con GPU (OpenCL)
     https://eunomia.dev/en/others/cuda-tutorial/15-opencl-vector-addition/
 
-L'account è deleonardis, la macchina è
-	pianosa.di.unipi.it has address 131.114.3.250
+L'account è deleonardis, la macchina è pianosa.di.unipi.it, address: 131.114.3.250
+   ssh -Y deleonardis@131.114.3.250
 
 
 
