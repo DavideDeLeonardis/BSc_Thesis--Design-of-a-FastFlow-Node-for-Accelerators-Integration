@@ -105,7 +105,8 @@ void parse_args(int argc, char *argv[], size_t &N, size_t &NUM_TASKS, std::strin
 }
 
 /**
- * Funzione per stampare la configurazione di esecuzione del programma.
+ * Funzione per stampare la configurazione di esecuzione del programma in base agli argomenti
+ * inseriti da riga di comando.
  */
 void print_configuration(size_t N, size_t NUM_TASKS, const std::string &device_type,
                          const std::string &kernel_path, const std::string &kernel_name) {
@@ -170,7 +171,7 @@ PerformanceData calculate_metrics(const ComputeResult &results) {
 }
 
 /**
- * Funzione per calcolare e stampare le statistiche finali.
+ * Funzione per stampare le statistiche finali.
  */
 void print_metrics(size_t N, size_t NUM_TASKS, const std::string &device_type,
                    const std::string &kernel_name, const PerformanceData &metrics,
