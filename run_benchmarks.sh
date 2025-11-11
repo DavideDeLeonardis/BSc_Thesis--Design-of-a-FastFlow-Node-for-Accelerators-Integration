@@ -2,7 +2,8 @@
 
 # Script per eseguire tutti i benchmark e raccogliere i risultati in un file CSV.
 
-OUTPUT_FILE="Measurements.csv"
+OUTPUT_DIR="measurement"
+OUTPUT_FILE="$OUTPUT_DIR/Measurements.csv"
 N_VALUES=(10000 1000000 7449999)
 NUM_TASKS=100
 
@@ -26,9 +27,12 @@ if [ ! -f "$EXECUTABLE" ]; then
     fi
     
     echo "Compilazione completata con successo."
+    echo
     echo "--- Inizio dei Benchmark ---"
+    echo
 else
     echo "--- Inizio dei Benchmark ---"
+    echo
 fi
 
 # Pulisce il file CSV precedente e scrive l'intestazione.
