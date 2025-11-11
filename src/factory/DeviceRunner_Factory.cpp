@@ -4,7 +4,7 @@
  */
 
 #include "DeviceRunner_Factory.hpp"
-#include "../common/device_constants.h"
+#include "../common/device_types.h"
 
 #include "../strategy_accelerator/AcceleratorPipelineRunner.hpp"
 #include "../strategy_cpu/Cpu_FF_Runner.hpp"

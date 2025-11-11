@@ -1,6 +1,6 @@
 #include "Helpers.hpp"
 
-#include "../common/device_constants.h"
+#include "../common/device_types.h"
 #include <algorithm>
 #include <iostream>
 
@@ -68,9 +68,9 @@ void parse_args(int argc, char *argv[], size_t &N, size_t &NUM_TASKS, std::strin
       kernel_path = argv[4];
 
    if (N == 0 || NUM_TASKS == 0) {
-      std::cerr
-         << "\n[ERROR] The size of vectors (N) or the number of tasks (NUM_TASKS) cannot be "
-            "0.\n";
+      std::cerr << "\n[ERROR] The size of vectors (N) or the number of tasks (NUM_TASKS) "
+                   "cannot be "
+                   "0.\n";
       print_usage(argv[0]);
       exit(EXIT_FAILURE);
    }
@@ -119,7 +119,9 @@ void print_configuration(size_t N, size_t NUM_TASKS, const std::string &device_t
  * Funzione per stampare le istruzioni d'uso.
  */
 void print_usage(const char *prog_name) {
-   std::cerr << "\nUsage: " << prog_name << " [N] [NUM_TASKS] [DEVICE] [KERNEL]\n"
+   std::cerr << "\nUsage: " << prog_name << " N NUM_TASKS DEVICE [KERNEL]\n\n"
+             << "   (Gli argomenti sono posizionali e devono essere forniti in questo "
+                "ordine,\n    gli argomenti fra [] sono opzionali)\n\n"
              << "  N            : Size of the vectors (default: 1,000,000)\n"
              << "  NUM_TASKS    : Number of tasks to run (default: 20)\n"
              << "  DEVICE       : 'cpu_ff', 'cpu_omp', 'gpu_opencl', 'gpu_metal' or 'fpga' "

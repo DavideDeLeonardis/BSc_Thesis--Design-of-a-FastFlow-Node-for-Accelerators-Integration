@@ -12,6 +12,7 @@
 
 #include "common/ComputeResult.hpp"
 #include "common/IDeviceRunner.hpp"
+#include "common/device_types.h"
 #include "factory/DeviceRunner_Factory.hpp"
 
 #include "helpers/Helpers.hpp"
@@ -21,10 +22,10 @@
 #include <string>
 
 int main(int argc, char *argv[]) {
-   // Parametri della command line.
-   size_t N = 1000000, NUM_TASKS = 20; // Default
-   std::string device_type = "cpu_ff"; // Default (CPU con ff::parallel_for)
-   std::string kernel_path, kernel_name;
+   // Parametri della command line di default.
+   size_t N = 1000000, NUM_TASKS = 20;
+   std::string device_type = device::CPU_FF,  
+               kernel_path = "", kernel_name = "";
 
    // Parsing degli argomenti della command line (setta anche il kernel di default) e stampa
    // della configurazione scelta.
