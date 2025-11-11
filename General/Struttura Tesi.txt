@@ -20,8 +20,7 @@ Spiegare come FastFlow possa "nascondere" la complessità dell'offloading hardwa
 1.4 Obiettivi e Contributi della Tesi
 Obiettivo: Progettare, implementare e valutare un prototipo software per l'integrazione efficiente di kernel per acceleratori hardware (FPGA, GPU OpenCL, GPU Metal) all'interno di una pipeline FastFlow.
 Contributi: Il design di un'architettura software disaccoppiata; l'analisi comparativa delle performance (Latenza, Throughput, Overhead) tra diverse API e carichi di lavoro (memory-bound vs. compute-bound).
-1.5 Struttura della Tesi
-Breve panoramica dei capitoli successivi.
+
 
 Capitolo 2: Fondamenti e Tecnologie Abilitanti
 2.1 Architetture a Confronto: CPU, GPU, FPGA
@@ -65,7 +64,7 @@ Spiegare come CMakeLists.txt usa le direttive condizionali (if(APPLE)) per compi
 Capitolo 5: Analisi Sperimentale e Risultati
 (Il capitolo più importante: i dati)
 5.1 Setup Sperimentale (Hardware e Software)
-Descrivere in dettaglio le macchine (Mac M2 Pro, VM Linux, Alveo U50) e le versioni dei software (Vitis, FastFlow, Clang, GCC).
+Descrivere in dettaglio le macchine (Mac M2 Pro, Host linux con ubunti con cpu Intel e Scheda FPGA Alveo U50 - comando per vedere dati delle schede) e le versioni dei software (Vitis, FastFlow, Clang, GCC).
 5.2 Metodologia di Benchmark e Metriche
 Spiegare i test (N=10k, 1M, 7.4M; NUM_TASKS=100).
 Definizione delle Metriche: Spiegare la legenda (Avg In-Node Time, Avg Service Time, Throughput, Compute, Overhead).
