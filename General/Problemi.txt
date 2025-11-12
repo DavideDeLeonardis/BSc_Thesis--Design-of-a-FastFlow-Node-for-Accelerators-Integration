@@ -1,4 +1,4 @@
-cambio funzioni enqueueBuffer in attuali
+cambio funzioni enqueueBuffer in attuali (from explicit copy to map and migrate)
 nome kernel uguale a nome kernel file
 Migliora diagramma delle classi
 
@@ -21,6 +21,7 @@ Gli altri problemi, come l'errore Operation not permitted (risolto con sudo) o l
 
 A. Il Problema: Il Collo di Bottiglia Sincrono (Il Peccato Originale)
 Cos'era: La tua architettura di partenza era sincrona. Il ff_node_acc_t originale, sebbene avesse due thread, alla fine aveva un producerLoop che chiamava accelerator_->execute(...). Quella singola chiamata faceva tutto: trasferiva i dati, eseguiva il kernel e recuperava i risultati.
+https://github.com/DavideDeLeonardis/TESI--Progettazione-di-un-nodo-FastFlow-per-integrazione-di-acceleratori/blob/2be8362006214ae3eb78e2ed7eec1fe48391a4d3/src/GpuAccelerator.cpp
 Perché era un Problema: L'intero nodo restava bloccato in attesa che un singolo task completasse l'intero ciclo. Non c'era alcuna sovrapposizione. La GPU/FPGA passava la maggior parte del suo tempo inattiva, aspettando che arrivassero nuovi dati. [Immagine di un operaio in attesa in una catena di montaggio]
 La Soluzione (Il Primo Cambio di Architettura): Questo è stato il motivo principale della nostra profonda ristrutturazione. Abbiamo dovuto:
 Smantellare la funzione monolitica execute().
