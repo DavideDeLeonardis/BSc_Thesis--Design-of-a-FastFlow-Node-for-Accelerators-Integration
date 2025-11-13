@@ -1,6 +1,7 @@
 #include "Gpu_OpenCL_Accelerator.hpp"
 
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -79,7 +80,7 @@ bool Gpu_OpenCL_Accelerator::initialize() {
    }
 
    // Chiama il costruttore di BufferManager che iniializza il pool di buffer.
-   buffer_manager_ = std::make_unique<BufferManager>(context_);
+   buffer_manager_ = std::make_unique<BufferManager>(context_, queue_);
 
    // Legge il kernel OpenCL e verifica che il percorso sia un file valido.
    std::ifstream kernelFile(kernel_path_);
@@ -137,24 +138,23 @@ bool Gpu_OpenCL_Accelerator::initialize() {
 void Gpu_OpenCL_Accelerator::send_data_to_device(void *task_context) {
    cl_int ret; // Codice di ritorno delle chiamate OpenCL
    auto *task = static_cast<Task *>(task_context);
+   size_t required_size_bytes = sizeof(int) * task->n;
 
    std::cerr << "[Gpu_OpenCL_Accelerator - START] Processing task " << task->id
              << " with N=" << task->n << "...\n";
 
    // Se la dimensione richiesta è diversa da quella allocata, rialloca
    // tutti i buffer del pool e ottieni il set di buffer.
-   size_t required_size_bytes = sizeof(int) * task->n;
    buffer_manager_->reallocate_buffers_if_needed(required_size_bytes);
    auto &current_buffers = buffer_manager_->get_buffer_set(task->buffer_idx);
 
-   // Scrive i due input sulla device memory.
-   OCL_CHECK(ret,
-             clEnqueueWriteBuffer(queue_, current_buffers.bufferA, CL_FALSE, 0,
-                                  required_size_bytes, task->a, 0, NULL, NULL),
-             return);
-   OCL_CHECK(ret,
-             clEnqueueWriteBuffer(queue_, current_buffers.bufferB, CL_FALSE, 0,
-                                  required_size_bytes, task->b, 0, NULL, &task->event),
+   // 1. Scrittura veloce in memoria Pinned (Host).
+   std::memcpy(current_buffers.pinnedA, task->a, required_size_bytes);
+   std::memcpy(current_buffers.pinnedB, task->b, required_size_bytes);
+
+   // 2. Migrazione verso la GPU (Host RAM -> VRAM).
+   cl_mem mem_objs[] = {current_buffers.bufferA, current_buffers.bufferB};
+   OCL_CHECK(ret, clEnqueueMigrateMemObjects(queue_, 2, mem_objs, 0, 0, NULL, &task->event),
              return);
 }
 
@@ -203,22 +203,29 @@ void Gpu_OpenCL_Accelerator::get_results_from_device(void *task_context,
    auto *task = static_cast<Task *>(task_context);
    size_t required_size_bytes = sizeof(int) * task->n;
    auto &current_buffers = buffer_manager_->get_buffer_set(task->buffer_idx);
+   cl_mem mem_objs[] = {current_buffers.bufferC}; // Buffer di output
    cl_event previous_event = task->event;
 
    auto t0 = std::chrono::steady_clock::now();
 
    // Recupera i risultati dalla device memory alla memoria host.
+   // 1. Migrazione VRAM -> Host Pinned Memory.
    OCL_CHECK(ret,
-             clEnqueueReadBuffer(queue_, current_buffers.bufferC, CL_TRUE, 0,
-                                 required_size_bytes, task->c, 1, &previous_event, NULL),
+             clEnqueueMigrateMemObjects(queue_, 1, mem_objs, CL_MIGRATE_MEM_OBJECT_HOST, 1,
+                                        &previous_event, NULL),
              return);
 
-   // Rilascia l'evento precedente.
+   // 2. Attendiamo fine trasferimento DMA.
+   OCL_CHECK(ret, clFinish(queue_), return);
+
+   // 3. Copia veloce Pinned -> Task Output.
+   std::memcpy(task->c, current_buffers.pinnedC, required_size_bytes);
+
    if (previous_event)
       clReleaseEvent(previous_event);
    task->event = nullptr;
 
-   // Calcola il tempo impiegato
+   // Calcola il tempo impiegato.
    auto t1 = std::chrono::steady_clock::now();
    computed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
 

@@ -1,6 +1,7 @@
 #include "Fpga_Accelerator.hpp"
 
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -82,7 +83,7 @@ bool Fpga_Accelerator::initialize() {
    }
 
    // Chiama il costruttore di BufferManager che iniializza il pool di buffer.
-   buffer_manager_ = std::make_unique<BufferManager>(context_);
+   buffer_manager_ = std::make_unique<BufferManager>(context_, queue_);
 
    // Caricamento del file binario dell'FPGA (.xclbin).
    std::ifstream binaryFile(kernel_path_, std::ios::binary);
@@ -137,24 +138,24 @@ bool Fpga_Accelerator::initialize() {
 void Fpga_Accelerator::send_data_to_device(void *task_context) {
    cl_int ret; // Codice di ritorno delle chiamate OpenCL
    auto *task = static_cast<Task *>(task_context);
+   size_t required_size_bytes = sizeof(int) * task->n;
 
    std::cerr << "[Fpga_Accelerator - START] Processing task " << task->id
              << " with N=" << task->n << "...\n";
 
    // Se la dimensione richiesta è diversa da quella allocata, rialloca
    // tutti i buffer del pool e ottieni il set di buffer.
-   size_t required_size_bytes = sizeof(int) * task->n;
    buffer_manager_->reallocate_buffers_if_needed(required_size_bytes);
    auto &current_buffers = buffer_manager_->get_buffer_set(task->buffer_idx);
 
-   // Scrive i due input sulla device memory.
-   OCL_CHECK(ret,
-             clEnqueueWriteBuffer(queue_, current_buffers.bufferA, CL_FALSE, 0,
-                                  required_size_bytes, task->a, 0, NULL, NULL),
-             return);
-   OCL_CHECK(ret,
-             clEnqueueWriteBuffer(queue_, current_buffers.bufferB, CL_FALSE, 0,
-                                  required_size_bytes, task->b, 0, NULL, &task->event),
+   // 1. Copia Memoria molto veloce: User Data (Task) -> Pinned Memory (OpenCL).
+   std::memcpy(current_buffers.pinnedA, task->a, required_size_bytes);
+   std::memcpy(current_buffers.pinnedB, task->b, required_size_bytes);
+
+   // 2. Migrazione: Host (Pinned) -> Device (DDR/HBM).
+   // Questo attiva il DMA. Poiché la memoria è Pinned, è Zero-Copy lato driver.
+   cl_mem mems[] = {current_buffers.bufferA, current_buffers.bufferB};
+   OCL_CHECK(ret, clEnqueueMigrateMemObjects(queue_, 2, mems, 0, 0, NULL, &task->event),
              return);
 }
 
@@ -202,11 +203,18 @@ void Fpga_Accelerator::get_results_from_device(void *task_context, long long &co
 
    auto t0 = std::chrono::steady_clock::now();
 
-   // Recupera i risultati dalla device memory alla memoria host.
+   // 1. Migrazione: Device -> Host (Pinned).
+   cl_mem mems[] = {current_buffers.bufferC};
    OCL_CHECK(ret,
-             clEnqueueReadBuffer(queue_, current_buffers.bufferC, CL_TRUE, 0,
-                                 required_size_bytes, task->c, 1, &previous_event, NULL),
+             clEnqueueMigrateMemObjects(queue_, 1, mems, CL_MIGRATE_MEM_OBJECT_HOST, 1,
+                                        &previous_event, NULL),
              return);
+
+   // 2. Attendiamo che il DMA finisca il trasferimento dei dati.
+   OCL_CHECK(ret, clFinish(queue_), return);
+
+   // 3. Copia Risultati: Pinned Memory -> User Data (Task).
+   std::memcpy(task->c, current_buffers.pinnedC, required_size_bytes);
 
    // Rilascia l'evento precedente.
    if (previous_event)

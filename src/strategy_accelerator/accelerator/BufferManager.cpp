@@ -5,7 +5,8 @@
 /**
  * @brief Costruttore: inizializza il pool di buffer.
  */
-BufferManager::BufferManager(cl_context context) : context_(context) {
+BufferManager::BufferManager(cl_context context, cl_command_queue queue)
+    : context_(context), queue_(queue) {
    buffer_pool_.resize(POOL_SIZE);
    for (size_t i = 0; i < POOL_SIZE; ++i)
       free_buffer_indices_.push(i);
@@ -54,18 +55,30 @@ bool BufferManager::reallocate_buffers_if_needed(size_t required_size_bytes) {
    // Alloca nuovi buffer.
    cl_int ret;
    for (size_t i = 0; i < POOL_SIZE; ++i) {
-      buffer_pool_[i].bufferA =
-         clCreateBuffer(context_, CL_MEM_READ_ONLY, required_size_bytes, NULL, &ret);
-      buffer_pool_[i].bufferB =
-         clCreateBuffer(context_, CL_MEM_READ_ONLY, required_size_bytes, NULL, &ret);
-      buffer_pool_[i].bufferC =
-         clCreateBuffer(context_, CL_MEM_WRITE_ONLY, required_size_bytes, NULL, &ret);
+      buffer_pool_[i].bufferA = clCreateBuffer(
+         context_, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, required_size_bytes, NULL, &ret);
+      buffer_pool_[i].bufferB = clCreateBuffer(
+         context_, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, required_size_bytes, NULL, &ret);
+      buffer_pool_[i].bufferC = clCreateBuffer(
+         context_, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, required_size_bytes, NULL, &ret);
       if (ret != CL_SUCCESS) {
          std::cerr
             << "[ERROR] BufferManager: Failed to allocate buffer pool. If on FPGA, maxium N "
                "usable is 7449999.\n";
          return false;
       }
+
+      // 3. Mapping immediato per ottenere i puntatori
+      // CL_MAP_WRITE_INVALIDATE_REGION è un'ottimizzazione: "non mi importa cosa c'è prima"
+      buffer_pool_[i].pinnedA = (int *)clEnqueueMapBuffer(
+         queue_, buffer_pool_[i].bufferA, CL_TRUE, CL_MAP_WRITE_INVALIDATE_REGION, 0,
+         required_size_bytes, 0, NULL, NULL, &ret);
+      buffer_pool_[i].pinnedB = (int *)clEnqueueMapBuffer(
+         queue_, buffer_pool_[i].bufferB, CL_TRUE, CL_MAP_WRITE_INVALIDATE_REGION, 0,
+         required_size_bytes, 0, NULL, NULL, &ret);
+      buffer_pool_[i].pinnedC =
+         (int *)clEnqueueMapBuffer(queue_, buffer_pool_[i].bufferC, CL_TRUE, CL_MAP_READ, 0,
+                                   required_size_bytes, 0, NULL, NULL, &ret);
    }
 
    allocated_size_bytes_ = required_size_bytes;

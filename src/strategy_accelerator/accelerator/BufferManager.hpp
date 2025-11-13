@@ -18,7 +18,7 @@
  */
 class BufferManager {
  public:
-   explicit BufferManager(cl_context context);
+   explicit BufferManager(cl_context context, cl_command_queue queue);
    ~BufferManager();
 
    // Set di buffer, 2 per input e 1 per l'output.
@@ -26,6 +26,11 @@ class BufferManager {
       cl_mem bufferA{nullptr};
       cl_mem bufferB{nullptr};
       cl_mem bufferC{nullptr};
+
+      // Puntatori alla Pinned Memory (Host side)
+      int *pinnedA{nullptr};
+      int *pinnedB{nullptr};
+      int *pinnedC{nullptr};
    };
 
    // Metodi per l'acquisizione e il rilascio dei buffer.
@@ -41,6 +46,7 @@ class BufferManager {
 
  private:
    cl_context context_; // Contesto OpenCL per creare i buffer
+   cl_command_queue queue_; // Coda di comandi per operazioni di copia asincrone
 
    // Dati per il pool di buffer nel device e per la gestione della concorrenza.
    const size_t POOL_SIZE =
