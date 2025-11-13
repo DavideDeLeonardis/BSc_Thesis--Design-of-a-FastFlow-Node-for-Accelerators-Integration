@@ -1,6 +1,7 @@
 cambio funzioni enqueueBuffer in attuali (from explicit copy to map and migrate)
 nome kernel uguale a nome kernel file
 Migliora diagramma delle classi
+Aggiungi citazioni
 
 1. Il "Deadlock Fantasma" (La Pipeline che Non Partiva)
 Questo è stato in assoluto il problema più difficile e subdolo.

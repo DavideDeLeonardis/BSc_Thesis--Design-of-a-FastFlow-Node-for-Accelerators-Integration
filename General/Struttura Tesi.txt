@@ -4,6 +4,7 @@ Capitoli: 18pt
 Sezioni: 16pt
 Sottosezione: 14pt
 Testo: 12pt
+4 righe fra sottosezioni
 
 TITOLO:
    Progettazione di un nodo FastFlow per integrazione di acceleratori
