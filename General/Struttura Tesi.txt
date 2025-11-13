@@ -84,6 +84,30 @@ Confronti Piattaforma:
 CPU: FastFlow vs. OpenMP (perché OpenMP è risultato più veloce?).
 GPU: OpenCL vs. Metal (quantificare il costo dell'astrazione vs. l'API nativa).
 FPGA: Analisi delle performance HLS (perché è più lento? Overhead VM/PCIe, design non ottimizzato per la forza bruta).
+   Cambio funzioni da enqueueBuffer in from explicit copy to map and migrate in FPGA Accelerator e GPU Accelerator
+   Ho proivato a fare from explicit copy to map and migrate (vedi branch apposita) e si aveva effettivamente un incremento minimo nelle prestazioni ma si complicava ulteriormente il codice
+   Es. con FPGA 
+      ------------------------------------------------------------------
+      PERFORMANCE METRICS on FPGA
+         (N=7449999, Tasks=100, Kernel=krnl_heavy_compute)
+      ------------------------------------------------------------------
+      Avg Service Time: 2494.37 ms/task
+         (Tempo medio tra il completamento di due task consecutivi)
+
+      Avg In_Node Time: 132413 ms/task
+         (Tempo medio per un task dall'ingresso all'uscita del nodo)
+
+      Avg Pure Compute Time: 2545.6 ms/task
+         (Tempo medio di un singolo calcolo sull'acceleratore, senza overhead)
+
+      Avg Overhead Time: 129867 ms/task
+         (Costo medio di gestione: trasferimento dati, uso delle code, etc.)
+
+      Throughput: 0.392308 tasks/sec
+         (Task totali processati al secondo)
+
+      Total Time Elapsed: 254.902 s
+      ------------------------------------------------------------------
 
 Capitolo 6: Conclusioni
 6.1 Sintesi del Lavoro e Raggiungimento degli Obiettivi
@@ -91,63 +115,6 @@ Capitolo 6: Conclusioni
 (es. nome kernel uguale a nome kernel file, incompatibilità di versione Vitis, limiti di memoria FPGA su VM, gestione errori con exit(), design specializzato per kernel 2-in/1-out).
 6.4 Considerazioni Personali
 (Cosa ha imparato dal progetto, corsi universitari più utili, difficoltà e soddisfazioni).
-6.5 Sviluppi futuri come cambio funzioni enqueueBuffer in from explicit copy to map and migrate in FPGA Accelerator
-   Hai notato che abbiamo cambiato la strategia di trasferimento dei dati rispetto al tuo codice originale per l'FPGA.
-
-                  La risposta breve è: abbiamo scelto clEnqueue[Write/Read]Buffer perché è più semplice, più pulito e universalmente compatibile, rendendo il codice della GPU e dell'FPGA quasi identico e più facile da gestire nella nostra pipeline asincrona.
-
-                  Entrambi i metodi, alla fine, fanno la stessa cosa: spostare un blocco di dati dalla RAM della CPU alla memoria del device (HBM sull'FPGA o VRAM sulla GPU). La differenza sta nel come lo fanno.
-
-                  Metodo 1: clEnqueueWrite/ReadBuffer (Il nostro metodo attuale)
-                  Questo è il modello di trasferimento implicito (o diretto).
-
-                  Come funziona: È una singola chiamata API. Tu dici al driver OpenCL: "Prendi i dati da questo puntatore della RAM (task->a) e copiali in quel buffer sul device (current_buffers.bufferA). Avvisami quando hai finito (restituendo un evento)".
-
-                  Chi fa il lavoro: Il driver OpenCL si occupa di tutto. Dietro le quinte, molto probabilmente alloca un pezzo di memoria "pinnata" (bloccata in RAM), ci copia i tuoi dati, e poi ordina al controller DMA (Direct Memory Access) di spostare i dati da lì al device.
-
-                  Pro:
-
-                  Semplicità: Una sola chiamata.
-
-                  Portabilità: Funziona perfettamente e in modo identico su qualsiasi hardware OpenCL (CPU, GPU, FPGA).
-
-                  Pulizia: Si integra perfettamente nella nostra pipeline basata su eventi (CL_FALSE per renderlo asincrono e &task->event per ottenere l'evento di completamento).
-
-                  Metodo 2: Map / Migrate / Unmap (Il tuo metodo originale sull'FPGA)
-                  Questo è il modello di trasferimento esplicito (o zero-copy-ish). È il modello fortemente raccomandato da Xilinx per le sue schede Alveo (FPGA).
-
-                  Come funziona: È un processo in più fasi che gestisci tu manualmente.
-
-                  clEnqueueMapBuffer: Chiedi al driver OpenCL: "Dammi un puntatore a una zona di RAM sull'host che sia 'mappata' sul buffer del device".
-
-                  memcpy: Sei tu (la tua CPU) che scrivi fisicamente i dati in quella zona di RAM mappata.
-
-                  clEnqueueMigrateMemObjects: Dici al driver: "Ok, ho finito di scrivere. Ora sei autorizzato a iniziare il trasferimento DMA di quella zona di memoria verso la memoria fisica del device (HBM)".
-
-                  clEnqueueUnmapMemObject: Rilasci il puntatore mappato.
-
-                  Pro:
-
-                  Performance (Teorica) su FPGA: Questo modello è progettato per evitare copie intermedie. Scrivendo direttamente in una memoria "host-accessible" che il DMA può leggere, si ottiene (in teoria) il percorso dati più veloce possibile sull'hardware Xilinx.
-
-                  Contro:
-
-                  Complessità: È molto più verboso. Richiede 3-4 chiamate API e la gestione manuale di memcpy.
-
-                  Orchestrazione Asincrona Difficile: Gestire la catena di eventi (Map deve finire prima di memcpy, memcpy prima di Migrate, Migrate prima del Kernel, Kernel prima del Migrate di ritorno...) è molto più complicato che con una singola chiamata.
-
-                  Specificità: È un modello molto specifico per architetture con memoria unificata o bus ad alte prestazioni come PCIe, tipico delle FPGA Xilinx.
-
-                  Perché Abbiamo Scelto il Metodo 1?
-                  Per l'obiettivo della tua tesi, ovvero dimostrare l'efficacia di una pipeline software asincrona a livello di sistema operativo/FastFlow, i vantaggi del Metodo 1 erano molto superiori:
-
-                  Priorità alla Chiarezza dell'Architettura: La nostra priorità era costruire una pipeline a 3 stadi pulita. WriteBuffer ci ha permesso di avere uno stadio send_data_async semplice e comprensibile. Gestire la complessità del Map/Migrate avrebbe "sporcato" la logica della pipeline.
-
-                  Astrazione e Portabilità: Usando WriteBuffer, i nostri GpuAccelerator e FpgaAccelerator sono diventati quasi identici. Questo è un risultato potente: dimostra che la nostra architettura (ff_node_acc_t) è così ben progettata da poter orchestrare hardware completamente diversi usando la stessa interfaccia.
-
-                  "Good Enough" Performance: Anche se Map/Migrate potrebbe essere marginalmente più veloce sull'FPGA, WriteBuffer è comunque estremamente performante. Il collo di bottiglia che stiamo risolvendo (il tempo di attesa della CPU) è molto più grande della piccola differenza tra questi due metodi di copia.
-
-                  In sintesi: abbiamo preferito la semplicità, la portabilità e la pulizia dell'architettura (WriteBuffer) rispetto a una micro-ottimizzazione specifica per l'hardware (Map/Migrate) che avrebbe reso il codice molto più complesso.
 
 Bibliografia
    lista bullet points
