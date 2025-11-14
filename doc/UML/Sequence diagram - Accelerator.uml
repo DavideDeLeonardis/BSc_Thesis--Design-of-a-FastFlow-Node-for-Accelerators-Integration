@@ -19,7 +19,7 @@ participant "ff_node_acc_t\n(Node 2)" as Node
 ' Le code sono partecipanti (canali di comunicazione)
 participant "inQ_" as inQ
 participant "producerThread\n(in Node 2)" as Prod
-participant "outQ_" as outQ
+participant "readyQ_" as readyQ
 participant "consumerThread\n(in Node 2)" as Cons
 participant "IAccelerator\n(GPU/FPGA)" as Acc
 participant "StatsCollector" as Stats
@@ -74,13 +74,13 @@ loop while !eos
     
     Prod -> Acc : send_data_to_device(task)
     Prod -> Acc : execute_kernel(task)
-    Prod -> outQ : push(task)
+    Prod -> readyQ : push(task)
 end
 
 '== 4. Consumer loop (Stadio 3) ===========================
 loop while !eos
-    ' Il consumer è bloccato in attesa sulla coda outQ_
-    Cons -> outQ : pop(task)
+    ' Il consumer è bloccato in attesa sulla coda readyQ_
+    Cons -> readyQ : pop(task)
     
     note right of Cons : Attesa bloccante del completamento\ndel kernel e del download.
     Cons -> Acc : get_results_from_device(task, &ns)
@@ -101,10 +101,10 @@ deactivate Node
 Prod -> inQ : pop(EOS)
 deactivate Prod 
 ' ...e inoltra EOS
-Prod -> outQ : push(EOS)
+Prod -> readyQ : push(EOS)
 
 ' Consumer riceve EOS, esce.
-Cons -> outQ : pop(EOS)
+Cons -> readyQ : pop(EOS)
 deactivate Cons 
 
 ' Il runtime FF chiama svc_end()
