@@ -32,42 +32,42 @@ Questi risultati sono una perfetta dimostrazione pratica della Legge di Amdahl. 
 Questo dimostra in modo conclusivo che l'offloading su acceleratori ha senso solo in scenari ad alto throughput, dove il costo di setup viene "spalmato" su un gran numero di operazioni.
 
 Capitolo 2: Fondamenti e Tecnologie Abilitanti
-2.1 Architetture a Confronto: CPU, GPU, FPGA
-Architettura CPU (Multi-core, cache, shared memory).
-Architettura GPU (SIMT, migliaia di core, parallelismo dei dati).
-Architettura FPGA (Logica riconfigurabile, parallelismo a pipeline, Sintesi ad Alto Livello (HLS) e ruolo di Vitis).
-2.2 Framework di Parallelismo Software su CPU
-FastFlow: Spiegare i pattern ff_Pipe (pipeline) e ff::ParallelFor (parallelismo dati).
-OpenMP: Spiegare il modello a direttive (#pragma omp parallel for) come standard industriale.
-2.3 API per l'Offloading Hardware
-OpenCL: Spiegare il suo ruolo di standard multipiattaforma (Contesto, Coda, Kernel .cl, Eventi).
-Apple Metal: Spiegare il suo ruolo di API nativa ad alte prestazioni per macOS (Device, Coda, Kernel .metal, Memoria Unificata).
+      2.1 Architetture a Confronto: CPU, GPU, FPGA
+      Architettura CPU (Multi-core, cache, shared memory).
+      Architettura GPU (SIMT, migliaia di core, parallelismo dei dati).
+      Architettura FPGA (Logica riconfigurabile, parallelismo a pipeline, Sintesi ad Alto Livello (HLS) e ruolo di Vitis).
+      2.2 Framework di Parallelismo Software su CPU
+      FastFlow: Spiegare i pattern ff_Pipe (pipeline) e ff::ParallelFor (parallelismo dati).
+      OpenMP: Spiegare il modello a direttive (#pragma omp parallel for) come standard industriale.
+      2.3 API per l'Offloading Hardware
+      OpenCL: Spiegare il suo ruolo di standard multipiattaforma (Contesto, Coda, Kernel .cl, Eventi).
+      Apple Metal: Spiegare il suo ruolo di API nativa ad alte prestazioni per macOS (Device, Coda, Kernel .metal, Memoria Unificata).
 
 Capitolo 3: Progettazione dell'Architettura Software - Progetto logico
-(Il "come" e il "perché" del suo design)
-3.1 Visione d'Insieme: Un Dispatcher Flessibile
-Descrivere l'architettura del main come "dispatcher" che seleziona il percorso di esecuzione (CPU vs. Acceleratore) in base agli input.
-3.2 L'Interfaccia IAccelerator: Il Contratto di Astrazione
-Spiegare l'importanza di un'interfaccia pura per disaccoppiare la logica della pipeline dall'hardware specifico.
-3.3 Architettura 1: Esecuzione Parallela su CPU - Desing pattern usato
-Spiegare il design dei "Runner" (executeCpuFFTasks, executeCpuOMPTasks) e perché sono sequenziali a livello di task ma paralleli a livello di dati.
-3.4 Architettura 2: La Pipeline di Offloading (ff_node_acc_t)
-Il Problema del Design: Come gestire l'offloading asincrono e "stateful" (con stato) all'interno di un nodo FastFlow?
-La Soluzione (Il Cuore della Tesi): L'incapsulamento di una pipeline manuale a 2 stadi (producer/consumer).
-Giustificazione: Spiegare perché questa architettura è superiore a una ff_Pipe "piatta" (gestione centralizzata dello stato, del BufferManager e della sincronizzazione).
-Sincronizzazione Efficiente: Spiegare la scelta della BlockingQueue per eliminare l'attesa attiva (yield) e consumare 0% di CPU.
-3.5 Pattern di Composizione: Il BufferManager
-Spiegare perché la logica del pool di buffer è stata estratta in una classe separata (Composizione) invece di usare una classe base complessa (Ereditarietà), per eliminare la duplicazione di codice tra Gpu e Fpga_Accelerator.
+      (Il "come" e il "perché" del suo design)
+      3.1 Visione d'Insieme: Un Dispatcher Flessibile
+      Descrivere l'architettura del main come "dispatcher" che seleziona il percorso di esecuzione (CPU vs. Acceleratore) in base agli input.
+      3.2 L'Interfaccia IAccelerator: Il Contratto di Astrazione
+      Spiegare l'importanza di un'interfaccia pura per disaccoppiare la logica della pipeline dall'hardware specifico.
+      3.3 Architettura 1: Esecuzione Parallela su CPU - Desing pattern usato
+      Spiegare il design dei "Runner" (executeCpuFFTasks, executeCpuOMPTasks) e perché sono sequenziali a livello di task ma paralleli a livello di dati.
+      3.4 Architettura 2: La Pipeline di Offloading (ff_node_acc_t)
+      Il Problema del Design: Come gestire l'offloading asincrono e "stateful" (con stato) all'interno di un nodo FastFlow?
+      La Soluzione (Il Cuore della Tesi): L'incapsulamento di una pipeline manuale a 2 stadi (producer/consumer).
+      Giustificazione: Spiegare perché questa architettura è superiore a una ff_Pipe "piatta" (gestione centralizzata dello stato, del BufferManager e della sincronizzazione).
+      Sincronizzazione Efficiente: Spiegare la scelta della BlockingQueue per eliminare l'attesa attiva (yield) e consumare 0% di CPU.
+      3.5 Pattern di Composizione: Il BufferManager
+      Spiegare perché la logica del pool di buffer è stata estratta in una classe separata (Composizione) invece di usare una classe base complessa (Ereditarietà), per eliminare la duplicazione di codice tra Gpu e Fpga_Accelerator.
 
 Capitolo 4: Dettagli Implementativi
-(Il "codice" che realizza il design)
-ff_node_acc_t
-4.2 Implementazione degli Acceleratori Concreti
-Gpu_OpenCL_Accelerator: Compilazione da sorgente (clCreateProgramWithSource).
-Fpga_Accelerator: Caricamento di binari (clCreateProgramWithBinary).
-Gpu_Metal_Accelerator: L'uso di Objective-C++ (.mm), la gestione della memoria unificata (memcpy), la compilazione da sorgente (newLibraryWithSource) e i "bridging cast" per nascondere i tipi (void*).
-4.3 Implementazione della Portabilità (CMake)
-Spiegare come CMakeLists.txt usa le direttive condizionali (if(APPLE)) per compilare e linkare file diversi (es. Fpga_Accelerator.cpp solo su Linux, Gpu_Metal_Accelerator.mm solo su macOS).
+      (Il "codice" che realizza il design)
+      ff_node_acc_t
+      4.2 Implementazione degli Acceleratori Concreti
+      Gpu_OpenCL_Accelerator: Compilazione da sorgente (clCreateProgramWithSource).
+      Fpga_Accelerator: Caricamento di binari (clCreateProgramWithBinary).
+      Gpu_Metal_Accelerator: L'uso di Objective-C++ (.mm), la gestione della memoria unificata (memcpy), la compilazione da sorgente (newLibraryWithSource) e i "bridging cast" per nascondere i tipi (void*).
+      4.3 Implementazione della Portabilità (CMake)
+      Spiegare come CMakeLists.txt usa le direttive condizionali (if(APPLE)) per compilare e linkare file diversi (es. Fpga_Accelerator.cpp solo su Linux, Gpu_Metal_Accelerator.mm solo su macOS).
 
 Capitolo 5: Analisi Sperimentale e Risultati
 (Il capitolo più importante: i dati)
