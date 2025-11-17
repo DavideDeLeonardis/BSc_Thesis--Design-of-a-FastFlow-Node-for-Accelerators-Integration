@@ -43,7 +43,32 @@ class MetalBufferManager {
    // ARC di Objective-C rilascia automaticamente gli oggetti MTLBuffer.
    ~MetalBufferManager() {}
 
-   BufferSet &get_buffer_set(size_t index) { return buffer_pool_[index]; }
+   /**
+    * Acquisisce un indice di buffer dal pool. Se nessun buffer è
+    * disponibile per un thread da acquisire, attende in modo non bloccante.
+    */
+   size_t acquire_buffer_set() {
+      std::unique_lock<std::mutex> lock(pool_mutex_);
+
+      // Attende finché non c'è un buffer libero.
+      buffer_available_cond_.wait(lock, [this] { return !free_buffer_indices_.empty(); });
+
+      // Th risvegliato. Estrae e restituisce l'indice del buffer libero.
+      size_t index = free_buffer_indices_.front();
+      free_buffer_indices_.pop();
+      return index;
+   }
+
+   /**
+    * Rilascia un indice di buffer nel pool e notifica i thread in attesa.
+    */
+   void release_buffer_set(size_t index) {
+      {
+         std::lock_guard<std::mutex> lock(pool_mutex_);
+         free_buffer_indices_.push(index);
+      }
+      buffer_available_cond_.notify_one();
+   }
 
    bool reallocate_buffers_if_needed(size_t required_size_bytes) {
       if (allocated_size_bytes_ == required_size_bytes)
@@ -74,32 +99,7 @@ class MetalBufferManager {
       return true;
    }
 
-   /**
-    * Acquisisce un indice di buffer dal pool. Se nessun buffer è
-    * disponibile per un thread da acquisire, attende in modo non bloccante.
-    */
-   size_t acquire_buffer_set() {
-      std::unique_lock<std::mutex> lock(pool_mutex_);
-
-      // Attende finché non c'è un buffer libero.
-      buffer_available_cond_.wait(lock, [this] { return !free_buffer_indices_.empty(); });
-
-      // Th risvegliato. Estrae e restituisce l'indice del buffer libero.
-      size_t index = free_buffer_indices_.front();
-      free_buffer_indices_.pop();
-      return index;
-   }
-
-   /**
-    * Rilascia un indice di buffer nel pool e notifica i thread in attesa.
-    */
-   void release_buffer_set(size_t index) {
-      {
-         std::lock_guard<std::mutex> lock(pool_mutex_);
-         free_buffer_indices_.push(index);
-      }
-      buffer_available_cond_.notify_one();
-   }
+   BufferSet &get_buffer_set(size_t index) { return buffer_pool_[index]; }
 
  private:
    id<MTLDevice> device_; // Riferimento al device Metal.
@@ -170,8 +170,8 @@ bool Gpu_Metal_Accelerator::initialize() {
    // Legge il kernel Metal e verifica che il percorso sia un file valido.
    std::ifstream kernelFile(kernel_path_);
    if (!kernelFile.is_open() || !std::filesystem::is_regular_file(kernel_path_)) {
-      std::cerr << "[ERROR] Gpu_Metal_Accelerator: Could not open kernel file: " << kernel_path_
-                << "\n";
+      std::cerr << "[ERROR] Gpu_Metal_Accelerator: Could not open kernel file: "
+                << kernel_path_ << "\n";
       exit(EXIT_FAILURE);
    }
    std::string kernelSource((std::istreambuf_iterator<char>(kernelFile)),
@@ -199,8 +199,8 @@ bool Gpu_Metal_Accelerator::initialize() {
    id<MTLFunction> func =
       [lib newFunctionWithName:[NSString stringWithUTF8String:kernel_name_.c_str()]];
    if (!func) {
-      std::cerr << "[ERROR] Gpu_Metal_Accelerator: Failed to find kernel function '" << kernel_name_
-                << "'.\n";
+      std::cerr << "[ERROR] Gpu_Metal_Accelerator: Failed to find kernel function '"
+                << kernel_name_ << "'.\n";
       exit(EXIT_FAILURE);
    }
    kernel_function_ = (__bridge_retained void *)func;

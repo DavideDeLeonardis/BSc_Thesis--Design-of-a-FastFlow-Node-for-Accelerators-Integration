@@ -25,8 +25,31 @@ BufferManager::~BufferManager() {
    }
 }
 
-BufferManager::BufferSet &BufferManager::get_buffer_set(size_t index) {
-   return buffer_pool_[index];
+/**
+ * @brief Acquisisce un indice di buffer dal pool. Se nessun buffer è
+ * disponibile per un thread da acquisire, attende in modo non bloccante.
+ */
+size_t BufferManager::acquire_buffer_set() {
+   std::unique_lock<std::mutex> lock(pool_mutex_);
+
+   // Attende finché non c'è un buffer libero.
+   buffer_available_cond_.wait(lock, [this] { return !free_buffer_indices_.empty(); });
+
+   // Thread risvegliato. Estrae e restituisce l'indice del buffer libero.
+   size_t index = free_buffer_indices_.front();
+   free_buffer_indices_.pop();
+   return index;
+}
+
+/**
+ * @brief Rilascia un indice di buffer nel pool e notifica i thread in attesa.
+ */
+void BufferManager::release_buffer_set(size_t index) {
+   {
+      std::lock_guard<std::mutex> lock(pool_mutex_);
+      free_buffer_indices_.push(index);
+   }
+   buffer_available_cond_.notify_one();
 }
 
 /**
@@ -72,29 +95,6 @@ bool BufferManager::reallocate_buffers_if_needed(size_t required_size_bytes) {
    return true;
 }
 
-/**
- * @brief Acquisisce un indice di buffer dal pool. Se nessun buffer è
- * disponibile per un thread da acquisire, attende in modo non bloccante.
- */
-size_t BufferManager::acquire_buffer_set() {
-   std::unique_lock<std::mutex> lock(pool_mutex_);
-
-   // Attende finché non c'è un buffer libero.
-   buffer_available_cond_.wait(lock, [this] { return !free_buffer_indices_.empty(); });
-
-   // Th risvegliato. Estrae e restituisce l'indice del buffer libero.
-   size_t index = free_buffer_indices_.front();
-   free_buffer_indices_.pop();
-   return index;
-}
-
-/**
- * @brief Rilascia un indice di buffer nel pool e notifica i thread in attesa.
- */
-void BufferManager::release_buffer_set(size_t index) {
-   {
-      std::lock_guard<std::mutex> lock(pool_mutex_);
-      free_buffer_indices_.push(index);
-   }
-   buffer_available_cond_.notify_one();
+BufferManager::BufferSet &BufferManager::get_buffer_set(size_t index) {
+   return buffer_pool_[index];
 }
