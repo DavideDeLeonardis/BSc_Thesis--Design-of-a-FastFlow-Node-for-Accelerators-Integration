@@ -1,13 +1,17 @@
-!! Aggiungi citazioni
+!! Indice
+!! Elenco delle figure
 !! Aggiungi captions a immagini e riferimenti dal testo
+!! Citazioni
 
 Font: Cambria
 Codice: Courier New
-Capitoli: 18pt
-Sezioni: 16pt
-Sottosezione: 14pt
+Capitoli: 20pt
+Sezioni: 18pt
+Sottosezione: 16pt
+Titoli paragrafi: 14pt
 Testo: 12pt
 4 righe fra sottosezioni diverse
+Spazio interlinea: 1,40
 
 TITOLO:
    Progettazione di un nodo FastFlow per integrazione di acceleratori
