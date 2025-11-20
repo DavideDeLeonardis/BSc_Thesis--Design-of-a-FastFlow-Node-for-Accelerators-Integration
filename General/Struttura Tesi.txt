@@ -6,7 +6,7 @@
 // -----------------------------------
 // ------ WORD SPECIFICATIONS --------
 Font: Cambria
-Codice: Courier New
+Codice font: Courier New
 Capitoli: 22pt
 Sezioni: 18pt
 Sottosezione: 16pt
