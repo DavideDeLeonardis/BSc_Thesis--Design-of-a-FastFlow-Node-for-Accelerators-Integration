@@ -1,4 +1,4 @@
-# Design of a FastFlow Node for Hardware Accelerator Integration
+# Design of a FastFlow Node for Hardware Accelerators Integration
 
 This thesis project explores the efficient integration of heterogeneous hardware accelerators (GPUs and FPGAs) within the **FastFlow** parallel streaming framework.
 
