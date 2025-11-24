@@ -1,5 +1,6 @@
 /external/fastflow
 /build/
+/General
 
 .qodo
 .DS_Store

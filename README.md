@@ -1,115 +1,114 @@
-# Progettazione di un Nodo FastFlow per l'Integrazione di Acceleratori Hardware
+# Design of a FastFlow Node for Hardware Accelerator Integration
 
-Questo progetto di tesi esplora l'integrazione efficiente di acceleratori hardware eterogenei (GPU e FPGA) all'interno del framework di streaming parallelo **FastFlow**.
+This thesis project explores the efficient integration of heterogeneous hardware accelerators (GPUs and FPGAs) within the **FastFlow** parallel streaming framework.
 
-Il core del progetto è un nuovo nodo FastFlow (**ff_node_acc_t**) progettato per gestire l'offloading asincrono di task computazionali su dispositivi eterogenei, nascondendo la 
-latenza dei task dietro una pipeline di lavoro.
+The core of the project is a new FastFlow node (**ff_node_acc_t**) designed to handle the asynchronous offloading of computational tasks to heterogeneous devices, hiding task latency behind a work pipeline.
 
 ---
 
-## Architettura
+## Architecture
 
-Il progetto adotta un'architettura software modulare basata sui design pattern **Strategy**, **Factory** e **Adapter**, per garantire flessibilità e manutenibilità.
+The project adopts a modular software architecture based on the **Strategy**, **Factory**, and **Adapter** design patterns to ensure flexibility and maintainability.
 
-### Strategie di Esecuzione (IDeviceRunner)
+### Execution Strategies (IDeviceRunner)
 
-Un'interfaccia comune permette di eseguire lo stesso carico di lavoro su backend diversi senza modificare il codice client.
+A common interface allows executing the same workload on different backends without modifying client code.
 
-- **CPU**: Strategie per l'esecuzione parallela su CPU multicore (`Cpu_OMP_Runner`, `Cpu_FF_Runner`).
-- **Acceleratori**: Un adattatore (`AcceleratorPipelineRunner`) incapsula una pipeline FastFlow specializzata per l'offloading.
+- **CPU**: Strategies for parallel execution on multicore CPUs (`Cpu_OMP_Runner`, `Cpu_FF_Runner`).
+- **Accelerators**: An adapter (`AcceleratorPipelineRunner`) encapsulates a specialized FastFlow pipeline for offloading.
 
-### Pipeline di Offloading
+### Offloading Pipeline
 
-Il nodo `ff_node_acc_t` implementa internamente una pipeline *Producer–Consumer* asincrona per massimizzare il throughput e sovrapporre la comunicazione *Host-to-Device* con il calcolo.
+The `ff_node_acc_t` node internally implements an asynchronous *Producer–Consumer* pipeline to maximize throughput and overlap *Host-to-Device* communication with computation.
 
-### Astrazione Hardware (IAccelerator)
+### Hardware Abstraction (IAccelerator)
 
-Un'interfaccia unificata astrae le differenze tra le API di basso livello:
+A unified interface abstracts the differences between low-level APIs:
 
-- OpenCL (FPGA / GPU NVIDIA / AMD)  
+- OpenCL (FPGA / GPU MacBook M2 Pro)
 - Metal (Apple Silicon)
 
 ---
 
-## Requisiti
+## Requirements
 
 
-### Dipendenze Software
+### Software Dependencies
 
-- **CMake** (≥ 3.18)  
-- Compilatore C++ con supporto **C++17**  
-- **FastFlow**: scaricato automaticamente da CMake  
-- **OpenCL**: per FPGA e GPU Apple M2 Pro
-- **OpenMP**: richiesto per la strategia `cpu_omp` su Linux Xeon  
-- **Metal**: richiesto per la strategia `gpu_metal` su MacOS  
+- **CMake** (≥ 3.18)
+- C++ Compiler with **C++17** support
+- **FastFlow**: automatically downloaded by CMake
+- **OpenCL**: for FPGA and Apple M2 Pro GPU
+- **OpenMP**: required for the `cpu_omp` strategy on Linux Xeon
+- **Metal**: required for the `gpu_metal` strategy on MacOS
 
 ---
 
-## Setup Sperimentale
+## Experimental Setup
 
-Le misurazioni sono state eseguite su due host di calcolo distinti:
+Measurements were performed on two distinct compute hosts:
 
-1. **MacBook M2 Pro (ambiente di sviluppo)**  
-   - Architettura: ARM64  
-   - CPU: Apple M2 Pro, 10 core  
-   - GPU: integrata Apple M2 Pro, 16 unità di calcolo  
-   - Sistema operativo: macOS Sonoma 15.6.1  
+1. **MacBook M2 Pro (development environment)**
+   - Architecture: ARM64
+   - CPU: Apple M2 Pro, 10 cores
+   - GPU: integrated Apple M2 Pro, 16 compute units
+   - OS: macOS Sonoma 15.6.1
 
-2. **Host Linux**  
-   - CPU: Intel Xeon E5-2650 v3 @ 2.30 GHz, 20 core fisici, 40 thread logici  
-   - Sistema operativo: Ubuntu 22.04.5 LTS  
-   - Acceleratore: scheda Xilinx Alveo U50 (xilinx_u50_gen3x16_xdma_base_5), connessa tramite bus PCIe
+2. **Linux Host**
+   - CPU: Intel Xeon E5-2650 v3 @ 2.30 GHz, 20 physical cores, 40 logical threads
+   - OS: Ubuntu 22.04.5 LTS
+   - Accelerator: Xilinx Alveo U50 card (xilinx_u50_gen3x16_xdma_base_5), connected via PCIe bus
 
-## Stack Software e Versioni
+## Software Stack and Versions
 
-### Compilatore
-- **MacOS:** Clang versione 20.1.7 [20] (Target: x86_64-apple-darwin24.6.0)  
+### Compiler
+- **MacOS:** Clang version 20.1.7 [20] (Target: x86_64-apple-darwin24.6.0)
 - **Linux:** GCC 15.1.0 [21]
 
-### Librerie e Toolchain
-- **FastFlow:** versione 3.0.0 [10]  
-  Utilizzata per implementare la pipeline sui nodi e per il confronto prestazionale su CPU Apple M2 Pro e CPU Intel.
-- **OpenMP:** versione 4.5 [15]  
-  Utilizzata per il confronto prestazionale su CPU Linux.
-- **Toolchain Vitis:** versione v2023.1 [8]  
-  Utilizzata per la Sintesi ad Alto Livello su FPGA.
-- **API OpenCL:** versione 1.2 [9]  
-  Utilizzata per l'interfacciamento con GPU Apple M2 Pro e FPGA.
-- **Driver XRT:** versione 2.16.204 [19]  
-  Driver di runtime Xilinx.
+### Libraries and Toolchain
+- **FastFlow:** version 3.0.0 [10]
+  Used to implement the pipeline on nodes and for performance comparison on Apple M2 Pro CPU and Intel CPU.
+- **OpenMP:** version 4.5 [15]
+  Used for performance comparison on Linux CPU.
+- **Vitis Toolchain:** version v2023.1 [8]
+  Used for High-Level Synthesis on FPGA.
+- **OpenCL API:** version 1.2 [9]
+  Used for interfacing with Apple M2 Pro GPU and FPGA.
+- **XRT Drivers:** version 2.16.204 [19]
+  Xilinx runtime drivers.
 ---
 
-## Compilazione
+## Compilation
 
-Dalla directory principale del progetto:
+From the main project directory:
 
 ```bash
 rm -rf build; cmake -B build && cmake --build build
 ```
 
-## Esecuzione
-L'eseguibile ```tesi-exec``` accetta i seguenti parametri posizionali:
+## Execution
+The executable `tesi-exec` accepts the following positional parameters:
 
 ```bash
 ./build/tesi-exec <N> <NUM_TASKS> <DEVICE_TYPE> <KERNEL_ARG>
 ```
 
 
-Parametri
-- N: dimensione del problema (numero elementi)
-- NUM_TASKS: numero di task da eseguire
-- DEVICE_TYPE (backend supportati):
+Parameters
+- N: problem size (number of elements)
+- NUM_TASKS: number of tasks to execute
+- DEVICE_TYPE (supported backends):
    - cpu_ff
    - cpu_omp
    - gpu_opencl
    - gpu_metal
    - fpga
 - KERNEL_ARG:
-   - CPU → nome kernel (vecAdd, polynomial_op, heavy_compute_kernel)
-   - GPU/FPGA → percorso file .cl, .metal, .xclbin
+   - CPU → kernel name (vecAdd, polynomial_op, heavy_compute_kernel)
+   - GPU/FPGA → path to .cl, .metal, .xclbin file
 
 <br>
-Esempi
+Examples
 CPU (FastFlow):
 
 ```bash
@@ -126,8 +125,8 @@ FPGA (OpenCL - Linux):
 ```bash
 ./build/tesi-exec 1000000 100 fpga kernels/fpga/krnl_vadd.xclbin
 ```
-## Benchmark Automatizzati
-Lo script incluso automatizza una suite di benchmark sui kernel disponibli e genera un CSV finale in /measurements:
+## Automated Benchmarks
+The included script automates a benchmark suite on available kernels and generates a final CSV in /measurements:
 
 
 ```bash

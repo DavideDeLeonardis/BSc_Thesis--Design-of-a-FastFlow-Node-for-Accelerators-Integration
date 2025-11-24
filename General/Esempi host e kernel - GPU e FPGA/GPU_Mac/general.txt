@@ -1,3 +1,0 @@
-clang -O2 -std=c11 host_vecadd_gpu.c  -framework OpenCL -o host_vecadd_gpu
-
-./host_vecadd_gpu              
